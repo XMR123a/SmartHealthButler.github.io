@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI语音陪伴 - 智能健康管家</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            min-height: 100vh;
+        }
+        .header {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(20px);
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .header-content {
+            max-width: 600px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            font-size: 1.5rem;
+            color: #92400e;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .back-btn {
+            padding: 10px 20px;
+            background: #f59e0b;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        .back-btn:hover {
+            background: #d97706;
+        }
+        .container {
+            max-width: 600px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        /* Voice Assistant Card */
+        .voice-card {
+            background: white;
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .mic-container {
+            position: relative;
+            width: 160px;
+            height: 160px;
+            margin: 0 auto 30px;
+        }
+        .mic-circle {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 10px 40px rgba(245, 158, 11, 0.4);
+        }
+        .mic-circle:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 50px rgba(245, 158, 11, 0.5);
+        }
+        .mic-circle.recording {
+            animation: pulse 1.5s ease-in-out infinite;
+            box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
+            70% { box-shadow: 0 0 0 20px rgba(245, 158, 11, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+        }
+        .mic-icon {
+            width: 64px;
+            height: 64px;
+            fill: white;
+        }
+        .mic-label {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+        }
+        .mic-subtitle {
+            font-size: 0.9rem;
+            color: #6b7280;
+            margin-bottom: 30px;
+        }
+        /* Chat Area */
+        .chat-area {
+            height: 300px;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f9fafb;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            text-align: left;
+        }
+        .message {
+            margin-bottom: 16px;
+            animation: slideUp 0.3s ease;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .message.user { text-align: right; }
+        .message-bubble {
+            display: inline-block;
+            padding: 14px 20px;
+            border-radius: 24px;
+            max-width: 80%;
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+        .user .message-bubble {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            border-bottom-right-radius: 8px;
+        }
+        .ai .message-bubble {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-bottom-left-radius: 8px;
+        }
+        /* Voice Controls */
+        .voice-controls {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+        .control-btn {
+            padding: 14px 24px;
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            color: #374151;
+        }
+        .control-btn:hover {
+            background: #f59e0b;
+            border-color: #f59e0b;
+            color: white;
+        }
+        .control-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+        /* Quick Actions */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        .quick-btn {
+            padding: 16px;
+            background: rgba(255,255,255,0.8);
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+        }
+        .quick-btn:hover {
+            background: white;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+        }
+        .quick-btn-icon {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+        }
+        .quick-btn-title {
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 4px;
+        }
+        .quick-btn-desc {
+            font-size: 0.8rem;
+            color: #6b7280;
+        }
+        /* Typing Indicator */
+        .typing {
+            display: flex;
+            gap: 4px;
+            padding: 14px 20px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 24px;
+            width: fit-content;
+        }
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #94a3b8;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite;
+        }
+        .typing-dot:nth-child(1) { animation-delay: 0s; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes bounce {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-6px); }
+        }
+        /* Speak Button */
+        .speak-btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            margin-top: 8px;
+        }
+        .speak-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+        }
+        .speak-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+        .speak-btn.speaking {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+        /* Login Overlay */
+        .login-overlay {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+        .login-card {
+            background: white;
+            padding: 48px;
+            border-radius: 24px;
+            text-align: center;
+            max-width: 400px;
+            box-shadow: 0 25px 80px rgba(0,0,0,0.3);
+        }
+        .login-card svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 24px;
+            color: #f59e0b;
+        }
+        .login-card h2 {
+            font-size: 1.5rem;
+            margin-bottom: 12px;
+            color: #1f2937;
+        }
+        .login-card p {
+            color: #6b7280;
+            margin-bottom: 24px;
+        }
+        .login-card a {
+            display: inline-block;
+            padding: 14px 32px;
+            background: linear-gradient(135deg, #0ea5e9, #8b5cf6);
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div id="appContainer" style="display: none;">
+        <header class="header">
+            <div class="header-content">
+                <h1>🎤 AI语音陪伴</h1>
+                <a href="index.html" class="back-btn">← 返回首页</a>
+            </div>
+        </header>
+
+        <div class="container">
+            <div class="voice-card">
+                <!-- Microphone -->
+                <div class="mic-container">
+                    <div class="mic-circle" id="micBtn">
+                        <svg class="mic-icon" viewBox="0 0 24 24">
+                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                            <line x1="12" y1="19" x2="12" y2="23"/>
+                            <line x1="8" y1="23" x2="16" y2="23"/>
+                        </svg>
+                    </div>
+                </div>
+                
+                <div class="mic-label" id="micLabel">点击开始语音对话</div>
+                <div class="mic-subtitle">正在聆听您的声音...</div>
+
+                <!-- Chat Area -->
+                <div class="chat-area" id="chatArea">
+                    <div class="message ai">
+                        <div class="message-bubble">
+                            👋 您好！我是您的AI语音助手，很高兴为您服务。<br><br>
+                            您可以点击下方按钮让我说话，或者点击麦克风开始语音对话。<br>
+                            我可以帮助您：健康提醒、用药提醒、情绪疏导、助眠陪伴。
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Voice Controls -->
+                <div class="voice-controls">
+                    <button class="control-btn" onclick="playHealthReminder()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <polyline points="12 6 12 12 16 14"/>
+                        </svg>
+                        健康提醒
+                    </button>
+                    <button class="control-btn" onclick="playMedicationReminder()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 4v16"/>
+                            <path d="M16 2l5 5-5 5"/>
+                            <path d="M8 2l-5 5 5 5"/>
+                        </svg>
+                        用药提醒
+                    </button>
+                    <button class="control-btn" onclick="playBreathingExercise()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                            <path d="M3 6v6a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+                        </svg>
+                        呼吸训练
+                    </button>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="quick-actions">
+                    <button class="quick-btn" onclick="sendMessage('我感觉有点焦虑')">
+                        <div class="quick-btn-icon">😔</div>
+                        <div class="quick-btn-title">情绪疏导</div>
+                        <div class="quick-btn-desc">需要心理支持</div>
+                    </button>
+                    <button class="quick-btn" onclick="sendMessage('我睡不着')">
+                        <div class="quick-btn-icon">😴</div>
+                        <div class="quick-btn-title">助眠陪伴</div>
+                        <div class="quick-btn-desc">帮助入睡</div>
+                    </button>
+                    <button class="quick-btn" onclick="sendMessage('今天天气怎么样')">
+                        <div class="quick-btn-icon">☀️</div>
+                        <div class="quick-btn-title">日常聊天</div>
+                        <div class="quick-btn-desc">随便聊聊</div>
+                    </button>
+                    <button class="quick-btn" onclick="sendMessage('给我讲个笑话')">
+                        <div class="quick-btn-icon">😄</div>
+                        <div class="quick-btn-title">开心一刻</div>
+                        <div class="quick-btn-desc">放松心情</div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Required Overlay -->
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-card">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" y1="19" x2="12" y2="23"/>
+                <line x1="8" y1="23" x2="16" y2="23"/>
+            </svg>
+            <h2>请先登录</h2>
+            <p>此功能需要登录后才能使用</p>
+            <a href="login.html">前往登录</a>
+        </div>
+    </div>
+
+    <script>
+        // Login Check
+        function checkLoginStatus() {
+            const user = sessionStorage.getItem('loggedInUser');
+            if (!user) {
+                document.getElementById('loginOverlay').style.display = 'flex';
+                document.getElementById('appContainer').style.display = 'none';
+                return false;
+            }
+            document.getElementById('loginOverlay').style.display = 'none';
+            document.getElementById('appContainer').style.display = 'block';
+            return true;
+        }
+
+        // Initialize
+        window.addEventListener('load', checkLoginStatus);
+
+        // Speech Synthesis
+        const synth = window.speechSynthesis;
+        let voices = [];
+
+        function loadVoices() {
+            voices = synth.getVoices();
+        }
+
+        loadVoices();
+        if (synth.onvoiceschanged !== undefined) {
+            synth.onvoiceschanged = loadVoices;
+        }
+
+        function speak(text) {
+            // Cancel previous speech
+            synth.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'zh-CN';
+            utterance.rate = 0.9;
+            utterance.pitch = 1;
+            
+            // Try to find Chinese voice
+            const chineseVoice = voices.find(v => v.lang.startsWith('zh')) || voices.find(v => v.lang.startsWith('zh-CN'));
+            if (chineseVoice) {
+                utterance.voice = chineseVoice;
+            }
+            
+            synth.speak(utterance);
+        }
+
+        // Add message to chat
+        function addMessage(text, isUser) {
+            const chatArea = document.getElementById('chatArea');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message ' + (isUser ? 'user' : 'ai');
+            messageDiv.innerHTML = '<div class="message-bubble">' + text.replace(/\n/g, '<br>') + '</div>';
+            chatArea.appendChild(messageDiv);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        // Generate AI response
+        function generateResponse(userInput) {
+            const responses = {
+                '焦虑': '别担心，我在这里陪伴您。深呼吸，让我们一起放松一下。您可以试试4-7-8呼吸法：用鼻子深深吸气4秒，屏住呼吸7秒，然后用嘴巴慢慢呼气8秒。重复几次，您会感觉好一些的。',
+                '睡不着': '我来陪您入睡吧。请找一个舒适的姿势躺下，闭上眼睛。让我们一起做深呼吸...吸气...呼气...想象您正在一个安静的森林里，听着微风和鸟鸣...放松您的身体，从脚趾开始，慢慢放松到头顶...',
+                '笑话': '好的，给您讲一个笑话：为什么程序员总是分不清圣诞节和万圣节？因为Dec 25等于Oct 31！（十进制25等于八进制31）',
+                '天气': '虽然我不能实时获取天气，但我可以建议您查看手机上的天气应用。不过无论天气如何，都要保持好心情哦！',
+                '健康': '今天您感觉怎么样？记得多喝水，保持适当运动，均衡饮食。您今天有什么健康方面的问题想聊吗？',
+                '用药': '请问您需要设置用药提醒吗？我可以帮助您记录用药时间和提醒您按时服药。请告诉我您需要服用什么药物，以及服药时间。',
+                '呼吸': '让我们一起做深呼吸练习。请跟着我：吸气4秒...屏住4秒...呼气6秒...重复几次，感受身体的放松。',
+                'default': '我理解您的感受。作为您的AI健康助手，我随时在这里倾听和陪伴您。您可以和我聊聊您的健康状况，或者告诉我您需要什么帮助。'
+            };
+
+            // Check keywords
+            if (userInput.includes('焦虑') || userInput.includes('紧张') || userInput.includes('压力')) {
+                return responses['焦虑'];
+            } else if (userInput.includes('睡不着') || userInput.includes('失眠') || userInput.includes('入睡')) {
+                return responses['睡不着'];
+            } else if (userInput.includes('笑话') || userInput.includes('开心') || userInput.includes('好笑')) {
+                return responses['笑话'];
+            } else if (userInput.includes('天气') || userInput.includes('温度')) {
+                return responses['天气'];
+            } else if (userInput.includes('健康') || userInput.includes('身体')) {
+                return responses['健康'];
+            } else if (userInput.includes('药') || userInput.includes('服药') || userInput.includes('提醒')) {
+                return responses['用药'];
+            } else if (userInput.includes('呼吸') || userInput.includes('放松')) {
+                return responses['呼吸'];
+            }
+            return responses['default'];
+        }
+
+        // Send message
+        function sendMessage(text) {
+            addMessage(text, true);
+            
+            setTimeout(() => {
+                const response = generateResponse(text);
+                addMessage(response, false);
+                speak(response);
+            }, 1000);
+        }
+
+        // Voice commands
+        function playHealthReminder() {
+            const message = '亲爱的用户，今天的健康提醒时间到了！请记得：多喝水，每天至少8杯水；保持规律作息，早睡早起；适当运动，每天至少30分钟。祝您身体健康！';
+            addMessage('播放健康提醒', true);
+            addMessage(message, false);
+            speak(message);
+        }
+
+        function playMedicationReminder() {
+            const message = '用药提醒时间到了！请按时服用您的药物。记得用温水送服，服药后避免立即躺下。如果您有任何用药疑问，建议咨询医生或药师。祝您早日康复！';
+            addMessage('播放用药提醒', true);
+            addMessage(message, false);
+            speak(message);
+        }
+
+        function playBreathingExercise() {
+            const message = '让我们一起做呼吸训练。请找一个舒适的姿势坐好，闭上眼睛。准备好后，我们开始：吸气...4秒...屏住...4秒...呼气...6秒...非常好，再来一次：吸气...屏住...呼气...放松...';
+            addMessage('开始呼吸训练', true);
+            addMessage(message, false);
+            speak(message);
+        }
+
+        // Microphone functionality
+        let recognition;
+        const micBtn = document.getElementById('micBtn');
+        const micLabel = document.getElementById('micLabel');
+
+        function startListening() {
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                recognition.lang = 'zh-CN';
+                recognition.interimResults = false;
+                recognition.maxAlternatives = 1;
+
+                recognition.onstart = function() {
+                    micBtn.classList.add('recording');
+                    micLabel.textContent = '正在聆听...';
+                };
+
+                recognition.onresult = function(event) {
+                    const transcript = event.results[0][0].transcript;
+                    sendMessage(transcript);
+                };
+
+                recognition.onerror = function(event) {
+                    console.error('Speech recognition error:', event.error);
+                    stopListening();
+                };
+
+                recognition.onend = function() {
+                    stopListening();
+                };
+
+                recognition.start();
+            } else {
+                alert('您的浏览器不支持语音识别功能，请使用Chrome浏览器');
+            }
+        }
+
+        function stopListening() {
+            if (recognition) {
+                recognition.stop();
+            }
+            micBtn.classList.remove('recording');
+            micLabel.textContent = '点击开始语音对话';
+        }
+
+        micBtn.addEventListener('click', function() {
+            if (micBtn.classList.contains('recording')) {
+                stopListening();
+            } else {
+                startListening();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户登录 - 智能健康管家</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 420px;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 25px 80px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #0ea5e9, #8b5cf6);
+            color: white;
+            padding: 32px;
+            text-align: center;
+        }
+        .header svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 16px;
+        }
+        .header h1 {
+            font-size: 1.75rem;
+            margin-bottom: 8px;
+        }
+        .header p {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .tab {
+            flex: 1;
+            padding: 16px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 500;
+            color: #64748b;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .tab.active {
+            color: #0ea5e9;
+        }
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 20%;
+            right: 20%;
+            height: 3px;
+            background: linear-gradient(135deg, #0ea5e9, #8b5cf6);
+            border-radius: 2px;
+        }
+        .tab:hover {
+            color: #0ea5e9;
+        }
+        .form-container {
+            padding: 32px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #374151;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #0ea5e9;
+        }
+        .form-group input.error {
+            border-color: #ef4444;
+        }
+        .form-group .error-message {
+            color: #ef4444;
+            font-size: 0.875rem;
+            margin-top: 6px;
+            display: none;
+        }
+        .form-group .error-message.show {
+            display: block;
+        }
+        .btn-primary {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #0ea5e9, #8b5cf6);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(14, 165, 233, 0.4);
+        }
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+        .btn-secondary {
+            width: 100%;
+            padding: 14px;
+            background: #f1f5f9;
+            color: #374151;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+        .links {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .links a {
+            color: #0ea5e9;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        .links a:hover {
+            text-decoration: underline;
+        }
+        .success-message {
+            background: #dcfce7;
+            color: #166534;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            text-align: center;
+            display: none;
+        }
+        .success-message.show {
+            display: block;
+        }
+        .error-message-box {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            text-align: center;
+            display: none;
+        }
+        .error-message-box.show {
+            display: block;
+        }
+        /* Admin Panel */
+        .admin-panel {
+            display: none;
+            padding: 24px;
+        }
+        .admin-panel.show {
+            display: block;
+        }
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .admin-header h3 {
+            color: #374151;
+        }
+        .btn-logout {
+            padding: 8px 16px;
+            background: #fee2e2;
+            color: #991b1b;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            cursor: pointer;
+        }
+        .btn-logout:hover {
+            background: #fecaca;
+        }
+        .users-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .user-item {
+            background: #f8fafc;
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .user-info {
+            flex: 1;
+        }
+        .user-info h4 {
+            color: #1f2937;
+            margin-bottom: 4px;
+        }
+        .user-info p {
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+        .user-role {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .user-role.user {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        .user-role.admin {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #64748b;
+            text-decoration: none;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+        .back-link:hover {
+            color: #374151;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+            <h1>智能健康管家</h1>
+            <p>登录您的账户，开启健康管理之旅</p>
+        </div>
+
+        <!-- Login/Register Tabs -->
+        <div class="tabs">
+            <div class="tab active" id="tab-login">登录</div>
+            <div class="tab" id="tab-register">注册</div>
+        </div>
+
+        <!-- Login Form -->
+        <div class="form-container" id="login-form">
+            <div class="success-message" id="login-success">登录成功！正在跳转...</div>
+            <div class="error-message-box" id="login-error"></div>
+            
+            <div class="form-group">
+                <label for="login-email">邮箱地址</label>
+                <input type="email" id="login-email" placeholder="请输入邮箱">
+                <div class="error-message" id="login-email-error">请输入有效的邮箱地址</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="login-password">密码</label>
+                <input type="password" id="login-password" placeholder="请输入密码">
+                <div class="error-message" id="login-password-error">请输入密码</div>
+            </div>
+            
+            <button class="btn-primary" id="btn-login">登录</button>
+            
+            <div class="links">
+                <a href="#" id="forgot-password">忘记密码？</a>
+            </div>
+        </div>
+
+        <!-- Register Form -->
+        <div class="form-container" id="register-form" style="display: none;">
+            <div class="success-message" id="register-success">注册成功！请登录</div>
+            <div class="error-message-box" id="register-error"></div>
+            
+            <div class="form-group">
+                <label for="register-name">用户名</label>
+                <input type="text" id="register-name" placeholder="请输入用户名">
+                <div class="error-message" id="register-name-error">用户名不能为空</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="register-email">邮箱地址</label>
+                <input type="email" id="register-email" placeholder="请输入邮箱">
+                <div class="error-message" id="register-email-error">请输入有效的邮箱地址</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="register-password">密码</label>
+                <input type="password" id="register-password" placeholder="请输入密码（至少6位）">
+                <div class="error-message" id="register-password-error">密码至少需要6位</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="register-confirm">确认密码</label>
+                <input type="password" id="register-confirm" placeholder="请再次输入密码">
+                <div class="error-message" id="register-confirm-error">两次输入的密码不一致</div>
+            </div>
+            
+            <button class="btn-primary" id="btn-register">注册</button>
+        </div>
+
+        <!-- Admin Panel -->
+        <div class="admin-panel" id="admin-panel">
+            <a href="#" class="back-link" id="back-to-login">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 18 9 12 15 6"/>
+                </svg>
+                返回登录
+            </a>
+            
+            <div class="admin-header">
+                <h3>管理员面板 - 用户列表</h3>
+                <button class="btn-logout" id="btn-admin-logout">退出登录</button>
+            </div>
+            
+            <div class="users-list" id="users-list">
+                <!-- Users will be dynamically added here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mock database
+        const mockUsers = [
+            { id: 1, name: '管理员', email: 'admin@health.com', password: 'admin123', role: 'admin' },
+            { id: 2, name: '张三', email: 'zhangsan@test.com', password: '123456', role: 'user' },
+            { id: 3, name: '李四', email: 'lisi@test.com', password: '654321', role: 'user' },
+            { id: 4, name: '王五', email: 'wangwu@test.com', password: 'password', role: 'user' }
+        ];
+
+        // DOM Elements
+        const tabLogin = document.getElementById('tab-login');
+        const tabRegister = document.getElementById('tab-register');
+        const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('register-form');
+        const adminPanel = document.getElementById('admin-panel');
+
+        // Tab switching
+        tabLogin.addEventListener('click', () => {
+            tabLogin.classList.add('active');
+            tabRegister.classList.remove('active');
+            loginForm.style.display = 'block';
+            registerForm.style.display = 'none';
+            adminPanel.classList.remove('show');
+        });
+
+        tabRegister.addEventListener('click', () => {
+            tabRegister.classList.add('active');
+            tabLogin.classList.remove('active');
+            registerForm.style.display = 'block';
+            loginForm.style.display = 'none';
+            adminPanel.classList.remove('show');
+        });
+
+        // Login validation and submit
+        document.getElementById('btn-login').addEventListener('click', () => {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            
+            let isValid = true;
+            
+            // Validate email
+            if (!email || !email.includes('@')) {
+                document.getElementById('login-email').classList.add('error');
+                document.getElementById('login-email-error').classList.add('show');
+                isValid = false;
+            } else {
+                document.getElementById('login-email').classList.remove('error');
+                document.getElementById('login-email-error').classList.remove('show');
+            }
+            
+            // Validate password
+            if (!password) {
+                document.getElementById('login-password').classList.add('error');
+                document.getElementById('login-password-error').classList.add('show');
+                isValid = false;
+            } else {
+                document.getElementById('login-password').classList.remove('error');
+                document.getElementById('login-password-error').classList.remove('show');
+            }
+            
+            if (isValid) {
+                // Check credentials
+                const user = mockUsers.find(u => u.email === email && u.password === password);
+                
+                if (user) {
+                    // Store user info in sessionStorage
+                    sessionStorage.setItem('loggedInUser', JSON.stringify({
+                        id: user.id,
+                        name: user.name,
+                        email: user.email,
+                        role: user.role
+                    }));
+                    
+                    if (user.role === 'admin') {
+                        // Show admin panel
+                        loginForm.style.display = 'none';
+                        adminPanel.classList.add('show');
+                        loadUsersList();
+                    } else {
+                        // Redirect to home page
+                        document.getElementById('login-success').classList.add('show');
+                        setTimeout(() => {
+                            window.location.href = 'index.html';
+                        }, 1500);
+                    }
+                } else {
+                    document.getElementById('login-error').textContent = '邮箱或密码错误';
+                    document.getElementById('login-error').classList.add('show');
+                }
+            }
+        });
+
+        // Register validation and submit
+        document.getElementById('btn-register').addEventListener('click', () => {
+            const name = document.getElementById('register-name').value;
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            const confirm = document.getElementById('register-confirm').value;
+            
+            let isValid = true;
+            
+            // Validate name
+            if (!name.trim()) {
+                document.getElementById('register-name').classList.add('error');
+                document.getElementById('register-name-error').classList.add('show');
+                isValid = false;
+            } else {
+                document.getElementById('register-name').classList.remove('error');
+                document.getElementById('register-name-error').classList.remove('show');
+            }
+            
+            // Validate email
+            if (!email || !email.includes('@')) {
+                document.getElementById('register-email').classList.add('error');
+                document.getElementById('register-email-error').classList.add('show');
+                isValid = false;
+            } else {
+                // Check if email already exists
+                const existingUser = mockUsers.find(u => u.email === email);
+                if (existingUser) {
+                    document.getElementById('register-email').classList.add('error');
+                    document.getElementById('register-email-error').textContent = '该邮箱已被注册';
+                    document.getElementById('register-email-error').classList.add('show');
+                    isValid = false;
+                } else {
+                    document.getElementById('register-email').classList.remove('error');
+                    document.getElementById('register-email-error').classList.remove('show');
+                }
+            }
+            
+            // Validate password
+            if (!password || password.length < 6) {
+                document.getElementById('register-password').classList.add('error');
+                document.getElementById('register-password-error').classList.add('show');
+                isValid = false;
+            } else {
+                document.getElementById('register-password').classList.remove('error');
+                document.getElementById('register-password-error').classList.remove('show');
+            }
+            
+            // Validate confirm password
+            if (password !== confirm) {
+                document.getElementById('register-confirm').classList.add('error');
+                document.getElementById('register-confirm-error').classList.add('show');
+                isValid = false;
+            } else {
+                document.getElementById('register-confirm').classList.remove('error');
+                document.getElementById('register-confirm-error').classList.remove('show');
+            }
+            
+            if (isValid) {
+                // Add new user
+                const newUser = {
+                    id: mockUsers.length + 1,
+                    name: name,
+                    email: email,
+                    password: password,
+                    role: 'user'
+                };
+                mockUsers.push(newUser);
+                
+                // Show success message and switch to login
+                document.getElementById('register-success').classList.add('show');
+                setTimeout(() => {
+                    tabLogin.click();
+                    document.getElementById('register-success').classList.remove('show');
+                    document.getElementById('register-name').value = '';
+                    document.getElementById('register-email').value = '';
+                    document.getElementById('register-password').value = '';
+                    document.getElementById('register-confirm').value = '';
+                }, 2000);
+            }
+        });
+
+        // Load users list for admin
+        function loadUsersList() {
+            const usersList = document.getElementById('users-list');
+            usersList.innerHTML = '';
+            
+            mockUsers.forEach(user => {
+                const userItem = document.createElement('div');
+                userItem.className = 'user-item';
+                userItem.innerHTML = `
+                    <div class="user-info">
+                        <h4>${user.name}</h4>
+                        <p>${user.email}</p>
+                    </div>
+                    <span class="user-role ${user.role}">${user.role === 'admin' ? '管理员' : '普通用户'}</span>
+                `;
+                usersList.appendChild(userItem);
+            });
+        }
+
+        // Admin logout
+        document.getElementById('btn-admin-logout').addEventListener('click', () => {
+            sessionStorage.removeItem('loggedInUser');
+            adminPanel.classList.remove('show');
+            loginForm.style.display = 'block';
+            tabLogin.classList.add('active');
+            tabRegister.classList.remove('active');
+        });
+
+        // Back to login from admin panel
+        document.getElementById('back-to-login').addEventListener('click', (e) => {
+            e.preventDefault();
+            adminPanel.classList.remove('show');
+            loginForm.style.display = 'block';
+            tabLogin.classList.add('active');
+            tabRegister.classList.remove('active');
+        });
+
+        // Forgot password link
+        document.getElementById('forgot-password').addEventListener('click', (e) => {
+            e.preventDefault();
+            alert('请联系管理员重置密码');
+        });
+    </script>
+</body>
+</html>

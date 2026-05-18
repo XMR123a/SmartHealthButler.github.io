@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能健康管家 - 第1页</title>
+    <style>
+        :root { --gradient-primary: linear-gradient(135deg, #0ea5e9 0%, #8b5cf6 50%, #ec4899 100%); }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif; background: white; }
+        .page { width: 210mm; height: 297mm; margin: 0 auto; background: white; padding: 15mm 18mm; }
+        .header { text-align: center; margin-bottom: 8mm; }
+        .logo-wrapper { display: inline-block; padding: 7mm 14mm; background: var(--gradient-primary); border-radius: 14px; margin-bottom: 4mm; box-shadow: 0 12px 25px rgba(14, 165, 233, 0.3); }
+        .logo { font-size: 2rem; font-weight: 800; color: white; letter-spacing: 2px; }
+        .tagline { font-size: 0.85rem; color: #64748b; margin-bottom: 4mm; }
+        .divider { width: 50mm; height: 3px; background: var(--gradient-primary); margin: 0 auto; border-radius: 2px; }
+        .section { margin-bottom: 7mm; }
+        .section-title-box { display: inline-flex; align-items: center; gap: 3mm; background: linear-gradient(135deg, #3b82f6, #8b5cf6); padding: 2.5mm 6mm; border-radius: 30px; margin-bottom: 4mm; }
+        .section-icon { font-size: 1rem; }
+        .section-title { font-size: 0.9rem; font-weight: 700; color: white; }
+        .feature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+        .feature-card { background: linear-gradient(145deg, #ffffff, #f8fafc); padding: 4mm; border-radius: 10px; border: 1px solid rgba(14, 165, 233, 0.15); }
+        .feature-icon-box { width: 35px; height: 35px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; margin-bottom: 2mm; }
+        .feature-icon-box.ai { background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(6,182,212,0.15)); }
+        .feature-icon-box.food { background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(139,92,246,0.15)); }
+        .feature-icon-box.health { background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(236,72,153,0.15)); }
+        .feature-icon-box.voice { background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(239,68,68,0.15)); }
+        .feature-title { font-size: 0.88rem; font-weight: 700; color: #1e293b; margin-bottom: 1.5mm; }
+        .feature-desc { font-size: 0.75rem; color: #64748b; line-height: 1.5; }
+        .stats-section { background: var(--gradient-primary); padding: 5mm; border-radius: 12px; margin: 7mm 0; }
+        .stats-title { text-align: center; color: rgba(255,255,255,0.9); font-size: 0.8rem; margin-bottom: 4mm; }
+        .stats-row { display: flex; justify-content: space-around; }
+        .stat-item { text-align: center; padding: 2.5mm 4mm; background: rgba(255,255,255,0.12); border-radius: 8px; }
+        .stat-value { font-size: 1.6rem; font-weight: 800; color: white; }
+        .stat-label { font-size: 0.68rem; color: rgba(255,255,255,0.85); margin-top: 1.5mm; }
+        .innovation-list { list-style: none; }
+        .innovation-item { background: linear-gradient(145deg, #ffffff, #f8fafc); padding: 3.5mm; margin-bottom: 2.5mm; border-radius: 8px; border-left: 3px solid #3b82f6; }
+        .innovation-title { font-weight: 700; font-size: 0.82rem; color: #1e293b; margin-bottom: 1.5mm; }
+        .innovation-desc { font-size: 0.72rem; color: #64748b; line-height: 1.5; }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="header">
+            <div class="logo-wrapper"><div class="logo">智能健康管家</div></div>
+            <div class="tagline">您的AI私人健康管家 · 全天候守护您的健康</div>
+            <div class="divider"></div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title-box"><span class="section-icon">✨</span><span class="section-title">核心功能</span></div>
+            <div class="feature-grid">
+                <div class="feature-card"><div class="feature-icon-box ai">🤖</div><div class="feature-title">AI智能问诊</div><div class="feature-desc">智能分诊、多轮引导、症状分析、用药安全检查</div></div>
+                <div class="feature-card"><div class="feature-icon-box food">🍎</div><div class="feature-title">AI饮食管理</div><div class="feature-desc">食物数据库、营养分析、多人家庭饮食记录</div></div>
+                <div class="feature-card"><div class="feature-icon-box health">📊</div><div class="feature-title">AI健康分析</div><div class="feature-desc">健康问卷、睡眠分析、活动能量可视化、健康日报</div></div>
+                <div class="feature-card"><div class="feature-icon-box voice">🎤</div><div class="feature-title">AI语音陪伴</div><div class="feature-desc">语音对话、健康提醒、呼吸训练、助眠陪伴</div></div>
+            </div>
+        </div>
+        
+        <div class="stats-section">
+            <div class="stats-title">📈 平台数据概览</div>
+            <div class="stats-row">
+                <div class="stat-item"><div class="stat-value">10万+</div><div class="stat-label">服务用户</div></div>
+                <div class="stat-item"><div class="stat-value">98%</div><div class="stat-label">用户满意度</div></div>
+                <div class="stat-item"><div class="stat-value">7×24</div><div class="stat-label">全天候服务</div></div>
+                <div class="stat-item"><div class="stat-value">50+</div><div class="stat-label">疾病识别</div></div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="section-title-box"><span class="section-icon">💎</span><span class="section-title">创新亮点</span></div>
+            <ul class="innovation-list">
+                <li class="innovation-item"><div class="innovation-title">🔗 全链路健康闭环</div><div class="innovation-desc">数据统一分析+饮食识别+运动指导+语音陪伴+AI问诊全链路自动化</div></li>
+                <li class="innovation-item"><div class="innovation-title">🧠 真正懂身体的AI</div><div class="innovation-desc">深度学习用户健康数据，提供个性化而非模板化的健康建议</div></li>
+                <li class="innovation-item"><div class="innovation-title">💝 能陪伴的健康助手</div><div class="innovation-desc">7×24小时语音交互，情感识别与心理疏导，温暖贴心的健康提醒</div></li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

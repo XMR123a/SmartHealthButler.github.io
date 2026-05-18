@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI智能问诊 - 智能健康管家</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #0ea5e9, #8b5cf6);
+            color: white;
+            padding: 24px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 1.75rem;
+            margin-bottom: 8px;
+        }
+        .header p {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+        .chat-area {
+            height: 500px;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8fafc;
+        }
+        .message {
+            margin-bottom: 16px;
+            animation: slideUp 0.3s ease;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .message.user { text-align: right; }
+        .message-bubble {
+            display: inline-block;
+            padding: 12px 18px;
+            border-radius: 20px;
+            max-width: 80%;
+            line-height: 1.6;
+        }
+        .user .message-bubble {
+            background: linear-gradient(135deg, #0ea5e9, #8b5cf6);
+            color: white;
+            border-bottom-right-radius: 6px;
+        }
+        .ai .message-bubble {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-bottom-left-radius: 6px;
+        }
+        .typing {
+            display: flex;
+            gap: 4px;
+            padding: 10px 16px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            width: fit-content;
+        }
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #94a3b8;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite;
+        }
+        .typing-dot:nth-child(1) { animation-delay: 0s; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes bounce {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-6px); }
+        }
+        .input-area {
+            padding: 20px;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            gap: 12px;
+        }
+        .input-area input {
+            flex: 1;
+            padding: 14px 18px;
+            border: 2px solid #e2e8f0;
+            border-radius: 25px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        .input-area input:focus {
+            border-color: #0ea5e9;
+        }
+        .input-area button {
+            padding: 14px 28px;
+            background: linear-gradient(135deg, #0ea5e9, #8b5cf6);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .input-area button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(14, 165, 233, 0.4);
+        }
+        .symptom-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 16px 20px;
+            background: #f1f5f9;
+            border-top: 1px solid #e2e8f0;
+        }
+        .symptom-tag {
+            padding: 8px 16px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .symptom-tag:hover {
+            background: #0ea5e9;
+            color: white;
+            border-color: #0ea5e9;
+        }
+        .quick-actions {
+            display: flex;
+            gap: 12px;
+            padding: 16px 20px;
+            background: #fffbeb;
+            border-top: 1px solid #fef3c7;
+        }
+        .quick-btn {
+            flex: 1;
+            padding: 12px;
+            background: white;
+            border: 1px solid #fde68a;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .quick-btn:hover {
+            background: #fde68a;
+            border-color: #fcd34d;
+        }
+        .quick-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+        .disclaimer {
+            padding: 16px 20px;
+            background: #fef3c7;
+            font-size: 0.8rem;
+            color: #92400e;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="appContainer" style="display: none;">
+        <div class="header">
+            <h1>🩺 AI智能问诊</h1>
+            <p>基于医学诊断逻辑的智能健康助手</p>
+        </div>
+        
+        <div class="chat-area" id="chatArea">
+            <div class="message ai">
+                <div class="message-bubble">
+                    👋 您好！我是您的AI健康助手。<br><br>
+                    请描述您的症状，我将根据医学诊断逻辑为您分析：<br>
+                    1. 确认主要问题<br>
+                    2. 分析性质与程度<br>
+                    3. 探索可能原因<br>
+                    4. 形成鉴别诊断<br><br>
+                    您可以直接描述症状，或点击下方快捷标签。
+                </div>
+            </div>
+        </div>
+        
+        <div class="symptom-tags">
+            <div class="symptom-tag" onclick="sendMessage('头痛')">🤕 头痛</div>
+            <div class="symptom-tag" onclick="sendMessage('胸闷')">😰 胸闷</div>
+            <div class="symptom-tag" onclick="sendMessage('腹痛')">🤢 腹痛</div>
+            <div class="symptom-tag" onclick="sendMessage('发热')">🤒 发热</div>
+            <div class="symptom-tag" onclick="sendMessage('咳嗽')">😷 咳嗽</div>
+            <div class="symptom-tag" onclick="sendMessage('头晕')">💫 头晕</div>
+            <div class="symptom-tag" onclick="sendMessage('恶心')">🤮 恶心</div>
+            <div class="symptom-tag" onclick="sendMessage('乏力')">😩 乏力</div>
+        </div>
+        
+        <div class="quick-actions">
+            <button class="quick-btn" onclick="quickAction('medication')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+                </svg>
+                用药安全
+            </button>
+            <button class="quick-btn" onclick="quickAction('emergency')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07"/>
+                </svg>
+                夜间急诊
+            </button>
+            <button class="quick-btn" onclick="quickAction('chronic')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                </svg>
+                慢病随访
+            </button>
+        </div>
+        
+        <div class="input-area">
+            <input type="text" id="userInput" placeholder="描述您的症状..." onkeypress="handleEnter(event)">
+            <button onclick="sendMessage()">发送</button>
+        </div>
+        
+        <div class="disclaimer">
+            ⚠️ AI问诊仅提供健康咨询辅助服务，不能替代执业医师的诊断。如遇紧急情况，请立即就医或拨打120。
+        </div>
+    </div>
+
+    <script>
+        // 登录检查
+        function checkLoginStatus() {
+            const user = sessionStorage.getItem('loggedInUser');
+            if (!user) {
+                document.body.innerHTML = `
+                    <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px;">
+                        <div style="background: white; padding: 48px; border-radius: 24px; text-align: center; max-width: 400px; box-shadow: 0 25px 80px rgba(0,0,0,0.3);">
+                            <svg style="width: 80px; height: 80px; margin-bottom: 24px; color: #f59e0b;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                                <line x1="12" y1="19" x2="12" y2="23"/>
+                                <line x1="8" y1="23" x2="16" y2="23"/>
+                            </svg>
+                            <h2 style="font-size: 1.5rem; margin-bottom: 12px; color: #1f2937;">请先登录</h2>
+                            <p style="color: #6b7280; margin-bottom: 24px;">此功能需要登录后才能使用</p>
+                            <a href="login.html" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #0ea5e9, #8b5cf6); color: white; text-decoration: none; border-radius: 12px; font-weight: 600;">前往登录</a>
+                        </div>
+                    </div>
+                `;
+                return false;
+            }
+            document.getElementById('appContainer').style.display = 'block';
+            return true;
+        }
+
+        // 页面加载时检查登录状态
+        window.addEventListener('load', checkLoginStatus);
+
+        // 问诊状态管理
+        let conversationState = 'initial';
+        let collectedInfo = {
+            chiefComplaint: '',
+            duration: '',
+            severity: '',
+            nature: '',
+            location: '',
+            associatedSymptoms: [],
+            triggers: [],
+            medicalHistory: []
+        };
+
+        // 关键词提取
+        function extractKeywords(text) {
+            const info = collectedInfo;
+            
+            // 部位识别
+            if (/头部|后脑勺|太阳穴/.test(text)) info.location = '头部';
+            else if (/胸|胸口|心脏/.test(text)) info.location = '胸部';
+            else if (/肚子|腹部|胃/.test(text)) info.location = '腹部';
+            else if (/喉咙|嗓子/.test(text)) info.location = '咽喉';
+            else if (/后背|腰/.test(text)) info.location = '腰背';
+            
+            // 严重程度
+            if (/剧痛|剧烈|受不了/.test(text)) info.severity = '剧烈';
+            else if (/中度|比较痛/.test(text)) info.severity = '中度';
+            else if (/轻微|有点/.test(text)) info.severity = '轻微';
+            
+            // 病程
+            if (/刚刚|几分钟/.test(text)) info.duration = '几分钟';
+            else if (/今天|今早/.test(text)) info.duration = '今天';
+            else if (/几天/.test(text)) info.duration = '几天';
+            else if (/一周|几周/.test(text)) info.duration = '数周';
+            else if (/反复|长期/.test(text)) info.duration = '长期';
+            
+            // 性质
+            if (/刺痛|针扎/.test(text)) info.nature = '刺痛';
+            else if (/胀痛|闷痛/.test(text)) info.nature = '胀痛';
+            else if (/绞痛/.test(text)) info.nature = '绞痛';
+            
+            // 伴随症状
+            if (/发烧|发热/.test(text) && !info.associatedSymptoms.includes('发热')) info.associatedSymptoms.push('发热');
+            if (/恶心|呕吐/.test(text) && !info.associatedSymptoms.includes('恶心')) info.associatedSymptoms.push('恶心');
+            if (/头晕/.test(text) && !info.associatedSymptoms.includes('头晕')) info.associatedSymptoms.push('头晕');
+            if (/乏力/.test(text) && !info.associatedSymptoms.includes('乏力')) info.associatedSymptoms.push('乏力');
+            if (/呼吸困难|气短/.test(text) && !info.associatedSymptoms.includes('呼吸困难')) info.associatedSymptoms.push('呼吸困难');
+            if (/心慌|心悸/.test(text) && !info.associatedSymptoms.includes('心悸')) info.associatedSymptoms.push('心悸');
+            
+            // 诱因
+            if (/吃饭|饮食/.test(text) && !info.triggers.includes('饮食')) info.triggers.push('饮食');
+            if (/受凉|感冒/.test(text) && !info.triggers.includes('受凉')) info.triggers.push('受凉');
+            if (/情绪|压力/.test(text) && !info.triggers.includes('情绪')) info.triggers.push('情绪');
+            if (/运动|劳累/.test(text) && !info.triggers.includes('运动')) info.triggers.push('运动');
+            
+            // 既往史
+            if (/高血压/.test(text) && !info.medicalHistory.includes('高血压')) info.medicalHistory.push('高血压');
+            if (/糖尿病/.test(text) && !info.medicalHistory.includes('糖尿病')) info.medicalHistory.push('糖尿病');
+            if (/心脏病/.test(text) && !info.medicalHistory.includes('心脏病')) info.medicalHistory.push('心脏病');
+        }
+
+        // 紧急情况检查
+        function checkEmergency(text) {
+            const urgent = ['胸痛', '呼吸困难', '意识丧失', '大出血', '抽搐', '昏迷'];
+            for (const word of urgent) {
+                if (text.includes(word)) {
+                    return { urgent: true, keyword: word };
+                }
+            }
+            return { urgent: false };
+        }
+
+        // 生成诊断
+        function generateDiagnosis() {
+            const info = collectedInfo;
+            const diagnoses = [];
+
+            if (info.location === '头部') {
+                if (info.associatedSymptoms.includes('恶心') || info.associatedSymptoms.includes('呕吐')) {
+                    diagnoses.push({ name: '偏头痛', prob: 0.8, reason: '头痛伴恶心/呕吐' });
+                }
+                diagnoses.push({ name: '紧张性头痛', prob: 0.6, reason: '与压力相关' });
+            }
+
+            if (info.location === '胸部') {
+                if (info.associatedSymptoms.includes('心悸') || info.associatedSymptoms.includes('呼吸困难')) {
+                    const hasHistory = info.medicalHistory.includes('高血压') || info.medicalHistory.includes('心脏病');
+                    diagnoses.push({ 
+                        name: '心绞痛/心律失常', 
+                        prob: hasHistory ? 0.85 : 0.5, 
+                        reason: '胸闷伴心悸/呼吸困难' 
+                    });
+                }
+                diagnoses.push({ name: '心脏神经官能症', prob: 0.4, reason: '可能与情绪相关' });
+            }
+
+            if (info.location === '腹部') {
+                if (info.associatedSymptoms.includes('恶心') || info.associatedSymptoms.includes('呕吐')) {
+                    diagnoses.push({ name: '急性胃炎', prob: 0.75, reason: '腹痛伴恶心呕吐' });
+                }
+                diagnoses.push({ name: '功能性消化不良', prob: 0.5, reason: '可能与饮食相关' });
+            }
+
+            if (info.location === '咽喉' && info.associatedSymptoms.includes('发热')) {
+                diagnoses.push({ name: '上呼吸道感染', prob: 0.85, reason: '咽痛伴发热' });
+            }
+
+            if (diagnoses.length === 0) {
+                diagnoses.push({ name: '功能性不适', prob: 0.5, reason: '症状无特异性指向' });
+            }
+
+            return diagnoses.sort((a, b) => b.prob - a.prob);
+        }
+
+        // 建议科室
+        function suggestDepartment() {
+            const deptMap = {
+                '头部': '神经内科',
+                '胸部': '心血管内科',
+                '腹部': '消化内科',
+                '咽喉': '呼吸内科',
+                '腰背': '骨科'
+            };
+            return deptMap[collectedInfo.location] || '内科';
+        }
+
+        // 生成回复
+        function generateResponse(userInput) {
+            const emergency = checkEmergency(userInput);
+            
+            if (emergency.urgent) {
+                return {
+                    type: 'emergency',
+                    message: '🚨 检测到紧急症状："' + emergency.keyword + '"！\n\n请立即拨打120急救电话！\n\n在等待急救时：\n1. 保持冷静\n2. 保持舒适体位\n3. 准备好药物信息\n\n时间就是生命！'
+                };
+            }
+
+            extractKeywords(userInput);
+
+            switch (conversationState) {
+                case 'initial':
+                    collectedInfo.chiefComplaint = userInput;
+                    conversationState = 'clarify';
+                    
+                    let clarifyMsg = '好的，我了解您有"' + userInput + '"的症状。\n\n';
+                    if (!collectedInfo.duration) clarifyMsg += '📅 这种情况持续多久了？\n';
+                    if (!collectedInfo.severity) clarifyMsg += '📊 疼痛程度如何？\n';
+                    if (!collectedInfo.location) clarifyMsg += '📍 具体哪个位置不舒服？\n';
+                    if (!collectedInfo.nature) clarifyMsg += '🔍 是什么样的感觉？（刺痛/胀痛/绞痛）\n';
+                    
+                    return { type: 'follow-up', message: clarifyMsg };
+
+                case 'clarify':
+                    conversationState = 'explore';
+                    
+                    let exploreMsg = '信息收集得很好！\n\n';
+                    if (collectedInfo.triggers.length === 0) exploreMsg += '🔑 是什么情况下出现的？（吃饭后/受凉后/运动后）\n';
+                    if (collectedInfo.associatedSymptoms.length === 0) exploreMsg += '🤔 还有其他不舒服吗？（发烧/恶心/头晕）\n';
+                    if (collectedInfo.medicalHistory.length === 0) exploreMsg += '📋 您有慢性病吗？（高血压/糖尿病）\n';
+                    
+                    if (exploreMsg === '信息收集得很好！\n\n') {
+                        conversationState = 'diagnose';
+                        return generateDiagnosisResponse();
+                    }
+                    return { type: 'follow-up', message: exploreMsg };
+
+                case 'explore':
+                case 'diagnose':
+                default:
+                    conversationState = 'diagnose';
+                    return generateDiagnosisResponse();
+            }
+        }
+
+        // 生成诊断回复
+        function generateDiagnosisResponse() {
+            const info = collectedInfo;
+            const diagnoses = generateDiagnosis();
+            const dept = suggestDepartment();
+
+            let response = '📊 AI诊断分析\n\n';
+            response += '━━━━━━━━━━━━━━━━\n\n';
+            
+            response += '【症状总结】\n';
+            response += '• 主诉：' + info.chiefComplaint + '\n';
+            if (info.duration) response += '• 病程：' + info.duration + '\n';
+            if (info.severity) response += '• 程度：' + info.severity + '\n';
+            if (info.location) response += '• 部位：' + info.location + '\n';
+            if (info.nature) response += '• 性质：' + info.nature + '\n';
+            if (info.associatedSymptoms.length) response += '• 伴随：' + info.associatedSymptoms.join('、') + '\n';
+            if (info.triggers.length) response += '• 诱因：' + info.triggers.join('、') + '\n';
+            if (info.medicalHistory.length) response += '• 既往：' + info.medicalHistory.join('、') + '\n';
+            
+            response += '\n━━━━━━━━━━━━━━━━\n\n';
+            response += '【鉴别诊断】\n';
+            
+            diagnoses.forEach((diag, i) => {
+                const badge = diag.prob > 0.7 ? '🔴' : diag.prob > 0.4 ? '🟡' : '🟢';
+                response += '\n' + badge + ' 可能性' + (i + 1) + '：' + diag.name + '\n';
+                response += '   依据：' + diag.reason + '\n';
+            });
+            
+            response += '\n━━━━━━━━━━━━━━━━\n\n';
+            response += '【建议】\n';
+            
+            if (info.severity === '剧烈' || diagnoses[0].prob > 0.8) {
+                response += '⚠️ 需要重视！建议尽快到' + dept + '就诊，必要时挂急诊。\n';
+            } else if (diagnoses[0].prob > 0.5) {
+                response += '📋 建议到' + dept + '进行检查，注意休息。\n';
+            } else {
+                response += '💡 症状较轻，可先观察休息。如加重请及时就医。\n';
+            }
+            
+            response += '\n❗ 以上分析仅供参考，不能替代专业诊断。';
+
+            return { type: 'diagnosis', message: response };
+        }
+
+        // UI操作
+        function addMessage(text, isUser) {
+            const chatArea = document.getElementById('chatArea');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message ' + (isUser ? 'user' : 'ai');
+            messageDiv.innerHTML = '<div class="message-bubble">' + text.replace(/\n/g, '<br>') + '</div>';
+            chatArea.appendChild(messageDiv);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        function showTyping() {
+            const chatArea = document.getElementById('chatArea');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'typing-indicator';
+            typingDiv.innerHTML = '<div class="typing"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>';
+            chatArea.appendChild(typingDiv);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        function hideTyping() {
+            const indicator = document.querySelector('.typing-indicator');
+            if (indicator) indicator.remove();
+        }
+
+        function sendMessage(text) {
+            const input = document.getElementById('userInput');
+            const userText = text || input.value.trim();
+            
+            if (!userText) return;
+            
+            addMessage(userText, true);
+            input.value = '';
+            
+            showTyping();
+            
+            setTimeout(() => {
+                hideTyping();
+                const response = generateResponse(userText);
+                addMessage(response.message, false);
+                
+                // 如果是紧急情况，重置状态以便重新问诊
+                if (response.type === 'emergency') {
+                    setTimeout(() => {
+                        conversationState = 'initial';
+                        collectedInfo = {
+                            chiefComplaint: '', duration: '', severity: '', nature: '', location: '',
+                            associatedSymptoms: [], triggers: [], medicalHistory: []
+                        };
+                        addMessage('如需继续问诊，请重新描述您的症状。', false);
+                    }, 3000);
+                }
+            }, 1500);
+        }
+
+        function handleEnter(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        function quickAction(type) {
+            if (type === 'medication') {
+                sendMessage('用药安全检查');
+            } else if (type === 'emergency') {
+                sendMessage('夜间急诊咨询');
+            } else if (type === 'chronic') {
+                sendMessage('慢病随访管理');
+            }
+        }
+    </script>
+</body>
+</html>

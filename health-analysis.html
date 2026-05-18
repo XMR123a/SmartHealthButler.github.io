@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI健康分析 - 智能健康管家</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .header {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(20px);
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            font-size: 1.5rem;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .back-btn {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        .back-btn:hover {
+            background: #5a67d8;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        .main-content {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+        @media (max-width: 1024px) {
+            .container { padding: 0 12px; }
+            .main-content { grid-template-columns: 1fr; }
+        }
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+        }
+        .card.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .card.hidden {
+            display: none;
+        }
+
+        .card.show {
+            display: block;
+        }
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .health-score-circle {
+            width: 180px;
+            height: 180px;
+            margin: 20px auto;
+            position: relative;
+        }
+        .score-circle {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: conic-gradient(
+                #10b981 0deg,
+                #10b981 var(--score-degree, 270deg),
+                #e2e8f0 var(--score-degree, 270deg)
+            );
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .score-inner {
+            width: 140px;
+            height: 140px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .score-value {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        .score-label {
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+        .score-grade {
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 4px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+        .score-grade.excellent { background: #10b981; color: white; }
+        .score-grade.good { background: #22c55e; color: white; }
+        .score-grade.fair { background: #f59e0b; color: white; }
+        .score-grade.poor { background: #ef4444; color: white; }
+        .health-metrics {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-top: 24px;
+        }
+        .metric-item {
+            padding: 16px;
+            background: #f8fafc;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+        .metric-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .metric-name {
+            font-weight: 600;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .metric-status {
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+        .metric-status.normal { background: #dcfce7; color: #16a34a; }
+        .metric-status.warning { background: #fef3c7; color: #d97706; }
+        .metric-status.danger { background: #fee2e2; color: #dc2626; }
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        .metric-unit {
+            font-size: 0.875rem;
+            color: #64748b;
+            font-weight: normal;
+        }
+        .metric-change {
+            font-size: 0.8rem;
+            margin-top: 4px;
+            color: #64748b;
+        }
+        .anomaly-list {
+            margin-top: 20px;
+        }
+        .anomaly-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 16px;
+            background: #fef2f2;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            border-left: 4px solid #ef4444;
+        }
+        .anomaly-item:last-child { margin-bottom: 0; }
+        .anomaly-icon {
+            width: 40px;
+            height: 40px;
+            background: #ef4444;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .anomaly-icon svg { width: 20px; height: 20px; color: white; }
+        .anomaly-content { flex: 1; }
+        .anomaly-title {
+            font-weight: 600;
+            color: #991b1b;
+            margin-bottom: 4px;
+        }
+        .anomaly-desc {
+            font-size: 0.875rem;
+            color: #b91c1c;
+            line-height: 1.5;
+        }
+        .health-report {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            border-radius: 16px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .report-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .report-title {
+            font-weight: 700;
+            color: #92400e;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .report-tabs {
+            display: flex;
+            gap: 8px;
+        }
+        .report-tab {
+            padding: 6px 12px;
+            background: rgba(255,255,255,0.6);
+            border: none;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .report-tab.active {
+            background: white;
+            font-weight: 600;
+        }
+        .report-content {
+            font-size: 0.9rem;
+            color: #78350f;
+            line-height: 1.8;
+        }
+        .report-section {
+            margin-bottom: 16px;
+        }
+        .report-section:last-child { margin-bottom: 0; }
+        .report-section-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .questionnaire-section {
+            margin-top: 20px;
+        }
+        .question-group {
+            margin-bottom: 24px;
+        }
+        .question-title {
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #1e293b;
+        }
+        .question-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .option-btn {
+            padding: 10px 16px;
+            background: #f1f5f9;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+        .option-btn:hover {
+            border-color: #667eea;
+        }
+        .option-btn.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        .slider-container {
+            margin: 16px 0;
+        }
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-bottom: 8px;
+        }
+        .slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #e2e8f0;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+        .slider-value {
+            text-align: center;
+            font-weight: 600;
+            color: #667eea;
+            margin-top: 8px;
+        }
+        .input-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        .input-group {
+            margin-bottom: 16px;
+        }
+        .input-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #374151;
+        }
+        .input-field {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1rem;
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .exercise-results {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            margin-top: 8px;
+            display: none;
+        }
+        .exercise-results.show {
+            display: block;
+        }
+        .exercise-item {
+            padding: 12px;
+            border-bottom: 1px solid #f1f5f9;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .exercise-item:hover {
+            background: #f0fdf4;
+        }
+        .exercise-item:last-child {
+            border-bottom: none;
+        }
+        .exercise-item-name {
+            font-weight: 600;
+            color: #1e293b;
+        }
+        .exercise-item-info {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-top: 4px;
+        }
+        .selected-exercises {
+            margin-top: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .exercise-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        .exercise-tag button {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 0;
+            line-height: 1;
+        }
+        .exercise-tag button:hover {
+            opacity: 0.8;
+        }
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 20px;
+        }
+        .submit-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        .sleep-chart {
+            height: auto;
+            min-height: 100px;
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+        .sleep-segment {
+            position: relative;
+            height: 60px;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #e2e8f0;
+        }
+        .sleep-phase {
+            position: absolute;
+            top: 0;
+            height: 100%;
+            transition: width 1s ease;
+        }
+        .sleep-phase.deep {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+        .sleep-phase.light {
+            background: linear-gradient(135deg, #a5b4fc, #c4b5fd);
+        }
+        .sleep-phase.awake {
+            background: #fef3c7;
+        }
+        .sleep-legend {
+            display: flex;
+            gap: 16px;
+            margin-top: 12px;
+            font-size: 0.8rem;
+        }
+        .sleep-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .sleep-legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+        .sleep-legend-dot.deep { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .sleep-legend-dot.light { background: linear-gradient(135deg, #a5b4fc, #c4b5fd); }
+        .sleep-legend-dot.awake { background: #fef3c7; }
+        .chart-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+        .activity-chart {
+            height: 120px;
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 16px;
+            position: relative;
+        }
+        .activity-bars {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            height: 80px;
+            gap: 4px;
+        }
+        .activity-bar {
+            flex: 1;
+            background: linear-gradient(to top, #667eea, #764ba2);
+            border-radius: 4px 4px 0 0;
+            transition: height 1s ease;
+            min-height: 4px;
+        }
+        .sleep-time-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 0.8rem;
+            color: #667eea;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div id="appContainer" style="display: none;">
+    <header class="header">
+        <div class="header-content">
+            <h1>📊 AI健康分析</h1>
+            <a href="index.html" class="back-btn">← 返回首页</a>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="main-content">
+            <div class="card full-width">
+                <div class="card-title">📋 健康数据问卷</div>
+                
+                <div class="questionnaire-section">
+                    <div class="question-group">
+                        <div class="question-title">1. 睡眠时间区间</div>
+                        <div class="input-row" style="margin-bottom: 12px;">
+                            <div class="input-group">
+                                <label class="input-label">🌙 入睡时间</label>
+                                <input type="time" class="input-field" id="sleepStart" value="23:00">
+                            </div>
+                            <div class="input-group">
+                                <label class="input-label">☀️ 起床时间</label>
+                                <input type="time" class="input-field" id="sleepEnd" value="07:00">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="question-group">
+                        <div class="question-title">2. 睡眠质量如何？</div>
+                        <div class="question-options">
+                            <div class="option-btn" onclick="selectOption(this, 'sleepQuality', '很差')">很差</div>
+                            <div class="option-btn" onclick="selectOption(this, 'sleepQuality', '较差')">较差</div>
+                            <div class="option-btn selected" onclick="selectOption(this, 'sleepQuality', '一般')">一般</div>
+                            <div class="option-btn" onclick="selectOption(this, 'sleepQuality', '较好')">较好</div>
+                            <div class="option-btn" onclick="selectOption(this, 'sleepQuality', '很好')">很好</div>
+                        </div>
+                    </div>
+
+                    <div class="question-group">
+                        <div class="question-title">3. 今日步数</div>
+                        <input type="number" class="input-field" id="todayStepInput" placeholder="请输入今日步数" value="8000">
+                    </div>
+
+                    <div class="question-group">
+                        <div class="question-title">4. 今日运动项目</div>
+                        <input type="text" class="input-field" id="exerciseSearch" placeholder="搜索运动项目..." oninput="searchExercise()">
+                        <div class="exercise-results" id="exerciseResults"></div>
+                        <div class="selected-exercises" id="selectedExercises"></div>
+                    </div>
+
+                    <div class="question-group" id="exerciseTimeGroup" style="display: none;">
+                        <div class="question-title">5. 运动时间区间</div>
+                        <div class="input-row">
+                            <div class="input-group">
+                                <label class="input-label">⏰ 开始时间</label>
+                                <input type="time" class="input-field" id="exerciseStart" value="07:00">
+                            </div>
+                            <div class="input-group">
+                                <label class="input-label">⏰ 结束时间</label>
+                                <input type="time" class="input-field" id="exerciseEnd" value="08:00">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="question-group">
+                        <div class="question-title">5. 疲劳程度</div>
+                        <div class="slider-container">
+                            <div class="slider-labels">
+                                <span>精力充沛</span>
+                                <span>极度疲劳</span>
+                            </div>
+                            <input type="range" class="slider" id="fatigueSlider" min="1" max="10" step="1" value="5" oninput="updateSliderValue('fatigueSlider')">
+                            <div class="slider-value" id="fatigueSliderValue">5 - 有点累</div>
+                        </div>
+                    </div>
+
+                    <div class="question-group">
+                        <div class="question-title">6. 是否有以下症状？</div>
+                        <div class="question-options">
+                            <div class="option-btn" onclick="toggleSymptom(this, '头痛')">头痛</div>
+                            <div class="option-btn" onclick="toggleSymptom(this, '胸闷')">胸闷</div>
+                            <div class="option-btn" onclick="toggleSymptom(this, '乏力')">乏力</div>
+                            <div class="option-btn" onclick="toggleSymptom(this, '头晕')">头晕</div>
+                            <div class="option-btn" onclick="toggleSymptom(this, '心悸')">心悸</div>
+                            <div class="option-btn" onclick="toggleSymptom(this, '失眠')">失眠</div>
+                        </div>
+                    </div>
+
+                    <div class="question-group">
+                        <div class="question-title">7. 血压测量（选填）</div>
+                        <div class="input-row">
+                            <div class="input-group">
+                                <input type="number" class="input-field" id="systolicBP" placeholder="收缩压">
+                            </div>
+                            <div class="input-group">
+                                <input type="number" class="input-field" id="diastolicBP" placeholder="舒张压">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="question-group">
+                        <div class="question-title">8. 血氧饱和度（选填）</div>
+                        <input type="number" class="input-field" id="spo2Input" placeholder="正常范围 95-100%">
+                    </div>
+
+                    <button class="submit-btn" id="analyzeBtn" onclick="analyzeHealth()">🤖 开始AI健康分析</button>
+                </div>
+            </div>
+
+            <div class="card hidden" id="scoreCard">
+                <div class="card-title">🎯 AI综合健康评分</div>
+                
+                <div class="health-score-circle">
+                    <div class="score-circle" id="scoreCircle">
+                        <div class="score-inner">
+                            <div class="score-value" id="totalScore">--</div>
+                            <div class="score-label">综合评分</div>
+                        </div>
+                    </div>
+                    <div class="score-grade" id="scoreGrade">待评估</div>
+                </div>
+
+                <div class="health-metrics" id="healthMetrics">
+                    <div class="metric-item">
+                        <div class="metric-header">
+                            <div class="metric-name">😴 睡眠质量</div>
+                            <div class="metric-status normal" id="sleepStatus">正常</div>
+                        </div>
+                        <div class="metric-value" id="sleepScore">--<span class="metric-unit">分</span></div>
+                        <div class="metric-change" id="sleepTimeDisplay">23:00 - 07:00</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-header">
+                            <div class="metric-name">🫀 心血管健康</div>
+                            <div class="metric-status normal" id="heartStatus">正常</div>
+                        </div>
+                        <div class="metric-value" id="heartScore">--<span class="metric-unit">分</span></div>
+                        <div class="metric-change" id="heartChange">良好</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-header">
+                            <div class="metric-name">🏃 活动能量</div>
+                            <div class="metric-status normal" id="activityStatus">正常</div>
+                        </div>
+                        <div class="metric-value" id="activityScore">--<span class="metric-unit">分</span></div>
+                        <div class="metric-change" id="activityChange">无运动</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-header">
+                            <div class="metric-name">💪 体力恢复</div>
+                            <div class="metric-status normal" id="recoveryStatus">正常</div>
+                        </div>
+                        <div class="metric-value" id="recoveryScore">--<span class="metric-unit">分</span></div>
+                        <div class="metric-change" id="fatigueLevel">有点累</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card hidden" id="anomalyCard">
+                <div class="card-title">⚠️ 异常识别</div>
+                <div class="anomaly-list" id="anomalyList"></div>
+            </div>
+
+            <div class="card hidden" id="sleepChartCard">
+                <div class="card-title">📈 睡眠结构分析</div>
+                <div class="sleep-chart" id="sleepChart">
+                    <div class="sleep-segment" style="left: 0%; width: 100%; height: 80px;">
+                        <div class="sleep-phase deep" id="deepSleepBar" style="width: 20%; height: 100%;"></div>
+                        <div class="sleep-phase light" id="lightSleepBar" style="width: 75%; height: 100%;"></div>
+                        <div class="sleep-phase awake" id="awakeSleepBar" style="width: 5%; height: 100%;"></div>
+                    </div>
+                    <div class="sleep-time-labels">
+                        <span id="sleepStartLabel">23:00</span>
+                        <span>睡眠中</span>
+                        <span id="sleepEndLabel">07:00</span>
+                    </div>
+                    <div class="sleep-legend">
+                        <div class="sleep-legend-item">
+                            <div class="sleep-legend-dot deep"></div>
+                            <span>深睡眠</span>
+                        </div>
+                        <div class="sleep-legend-item">
+                            <div class="sleep-legend-dot light"></div>
+                            <span>浅睡眠</span>
+                        </div>
+                        <div class="sleep-legend-item">
+                            <div class="sleep-legend-dot awake"></div>
+                            <span>清醒</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="chart-labels">
+                    <span>入睡</span>
+                    <span>睡眠时长</span>
+                    <span>起床</span>
+                </div>
+                <div class="health-metrics" style="margin-top: 16px;">
+                    <div class="metric-item">
+                        <div class="metric-name">🌙 深睡眠</div>
+                        <div class="metric-value" id="deepSleep">--<span class="metric-unit">min</span></div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-name">💤 浅睡眠</div>
+                        <div class="metric-value" id="lightSleep">--<span class="metric-unit">min</span></div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-name">😴 实际睡眠</div>
+                        <div class="metric-value" id="actualSleep">--<span class="metric-unit">min</span></div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-name">🔄 醒来次数</div>
+                        <div class="metric-value" id="wakeCount">--<span class="metric-unit">次</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card hidden" id="activityChartCard">
+                <div class="card-title">🔥 今日活动能量</div>
+                <div class="activity-chart" id="activityChart">
+                    <div class="activity-bars" id="activityBars"></div>
+                </div>
+                <div class="chart-labels">
+                    <span>00:00</span>
+                    <span>06:00</span>
+                    <span>12:00</span>
+                    <span>18:00</span>
+                    <span>24:00</span>
+                </div>
+                <div class="health-metrics" style="margin-top: 16px;">
+                    <div class="metric-item">
+                        <div class="metric-name">👟 步数</div>
+                        <div class="metric-value" id="todaySteps">--<span class="metric-unit">步</span></div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-name">🔥 消耗卡路里</div>
+                        <div class="metric-value" id="todayCal">--<span class="metric-unit">kcal</span></div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-name">🏃 运动时长</div>
+                        <div class="metric-value" id="exerciseTimeDisplay">--<span class="metric-unit">min</span></div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-name">⚡ 活动强度</div>
+                        <div class="metric-value" id="activityIntensity">--</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card hidden full-width" id="reportCard">
+                <div class="health-report" id="healthReport">
+                    <div class="report-header">
+                        <div class="report-title">
+                            🤖 AI健康日报
+                        </div>
+                    </div>
+                    <div class="report-content" id="reportContent"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 登录检查
+        function checkLoginStatus() {
+            const user = sessionStorage.getItem('loggedInUser');
+            if (!user) {
+                document.body.innerHTML = `
+                    <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px;">
+                        <div style="background: white; padding: 48px; border-radius: 24px; text-align: center; max-width: 400px; box-shadow: 0 25px 80px rgba(0,0,0,0.3);">
+                            <svg style="width: 80px; height: 80px; margin-bottom: 24px; color: #f59e0b;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                                <line x1="12" y1="19" x2="12" y2="23"/>
+                                <line x1="8" y1="23" x2="16" y2="23"/>
+                            </svg>
+                            <h2 style="font-size: 1.5rem; margin-bottom: 12px; color: #1f2937;">请先登录</h2>
+                            <p style="color: #6b7280; margin-bottom: 24px;">此功能需要登录后才能使用</p>
+                            <a href="login.html" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #0ea5e9, #8b5cf6); color: white; text-decoration: none; border-radius: 12px; font-weight: 600;">前往登录</a>
+                        </div>
+                    </div>
+                `;
+                return false;
+            }
+            document.getElementById('appContainer').style.display = 'block';
+            return true;
+        }
+
+        // 页面加载时检查登录状态
+        window.addEventListener('load', checkLoginStatus);
+
+        const exerciseDatabase = [
+            { name: '跑步', category: '有氧', calories: 300 },
+            { name: '快走', category: '有氧', calories: 180 },
+            { name: '游泳', category: '有氧', calories: 350 },
+            { name: '骑行', category: '有氧', calories: 250 },
+            { name: '跳绳', category: '有氧', calories: 350 },
+            { name: '瑜伽', category: '柔韧', calories: 120 },
+            { name: '健身操', category: '有氧', calories: 300 },
+            { name: '力量训练', category: '力量', calories: 250 },
+            { name: '羽毛球', category: '球类', calories: 280 },
+            { name: '篮球', category: '球类', calories: 400 },
+            { name: '足球', category: '球类', calories: 450 },
+            { name: '太极拳', category: '传统', calories: 150 },
+            { name: '爬山', category: '户外', calories: 350 },
+            { name: '散步', category: '有氧', calories: 100 },
+            { name: '动感单车', category: '有氧', calories: 350 }
+        ];
+
+        let healthData = {
+            sleepStart: '23:00',
+            sleepEnd: '07:00',
+            sleepHours: 8,
+            sleepQuality: '一般',
+            steps: 8000,
+            exercises: [],
+            exerciseTime: 60,
+            fatigue: 5,
+            symptoms: [],
+            systolicBP: null,
+            diastolicBP: null,
+            spo2: null
+        };
+
+        function updateSliderValue(id) {
+            const slider = document.getElementById(id);
+            const display = document.getElementById(id + 'Value');
+            if (id === 'fatigueSlider') {
+                const labels = ['精力充沛', '有点累', '比较累', '很累', '非常累'];
+                const level = Math.min(Math.floor(slider.value / 2), 4);
+                display.textContent = slider.value + ' - ' + labels[level];
+            }
+        }
+
+        function selectOption(btn, type, value) {
+            btn.parentElement.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            healthData[type] = value;
+        }
+
+        function toggleSymptom(btn, symptom) {
+            btn.classList.toggle('selected');
+            const index = healthData.symptoms.indexOf(symptom);
+            if (index > -1) {
+                healthData.symptoms.splice(index, 1);
+            } else {
+                healthData.symptoms.push(symptom);
+            }
+        }
+
+        function searchExercise() {
+            const query = document.getElementById('exerciseSearch').value.toLowerCase();
+            const resultsDiv = document.getElementById('exerciseResults');
+            if (query.length < 1) {
+                resultsDiv.classList.remove('show');
+                return;
+            }
+            const results = exerciseDatabase.filter(ex =>
+                ex.name.toLowerCase().includes(query) || ex.category.toLowerCase().includes(query)
+            ).slice(0, 8);
+            if (results.length === 0) {
+                resultsDiv.innerHTML = '<div class="exercise-item"><div class="exercise-item-name">未找到相关运动</div></div>';
+            } else {
+                resultsDiv.innerHTML = results.map(ex =>
+                    `<div class="exercise-item" onclick="addExercise('${ex.name}', ${ex.calories})">
+                        <div class="exercise-item-name">${ex.name}</div>
+                        <div class="exercise-item-info">${ex.category} | 每30分钟消耗约${ex.calories}kcal</div>
+                    </div>`
+                ).join('');
+            }
+            resultsDiv.classList.add('show');
+        }
+
+        function addExercise(name, baseCalories) {
+            if (!healthData.exercises.find(e => e.name === name)) {
+                healthData.exercises.push({ name: name, calories: baseCalories });
+                renderSelectedExercises();
+                document.getElementById('exerciseTimeGroup').style.display = 'block';
+                document.getElementById('exerciseSearch').value = '';
+                document.getElementById('exerciseResults').classList.remove('show');
+            }
+        }
+
+        function removeExercise(name) {
+            healthData.exercises = healthData.exercises.filter(e => e.name !== name);
+            renderSelectedExercises();
+            if (healthData.exercises.length === 0) {
+                document.getElementById('exerciseTimeGroup').style.display = 'none';
+            }
+        }
+
+        function renderSelectedExercises() {
+            const container = document.getElementById('selectedExercises');
+            container.innerHTML = healthData.exercises.map(ex =>
+                `<div class="exercise-tag">${ex.name}<button onclick="removeExercise('${ex.name}')">×</button></div>`
+            ).join('');
+        }
+
+        function calculateSleepHours() {
+            const start = healthData.sleepStart.split(':');
+            const end = healthData.sleepEnd.split(':');
+            let startMinutes = parseInt(start[0]) * 60 + parseInt(start[1]);
+            let endMinutes = parseInt(end[0]) * 60 + parseInt(end[1]);
+            if (endMinutes <= startMinutes) endMinutes += 24 * 60;
+            healthData.sleepHours = (endMinutes - startMinutes) / 60;
+        }
+
+        function analyzeHealth() {
+            healthData.sleepStart = document.getElementById('sleepStart').value;
+            healthData.sleepEnd = document.getElementById('sleepEnd').value;
+            calculateSleepHours();
+            healthData.steps = parseInt(document.getElementById('todayStepInput').value) || 0;
+            healthData.fatigue = parseInt(document.getElementById('fatigueSlider').value);
+            healthData.systolicBP = parseInt(document.getElementById('systolicBP').value) || null;
+            healthData.diastolicBP = parseInt(document.getElementById('diastolicBP').value) || null;
+            healthData.spo2 = parseInt(document.getElementById('spo2Input').value) || null;
+
+            const exerciseStart = document.getElementById('exerciseStart').value;
+            const exerciseEnd = document.getElementById('exerciseEnd').value;
+            healthData.exerciseStart = exerciseStart;
+            if (exerciseStart && exerciseEnd) {
+                const startTime = exerciseStart.split(':');
+                const endTime = exerciseEnd.split(':');
+                let startMinutes = parseInt(startTime[0]) * 60 + parseInt(startTime[1]);
+                let endMinutes = parseInt(endTime[0]) * 60 + parseInt(endTime[1]);
+                if (endMinutes <= startMinutes) endMinutes += 24 * 60;
+                healthData.exerciseTime = endMinutes - startMinutes;
+            }
+
+            let totalExerciseCal = 0;
+            healthData.exercises.forEach(ex => {
+                totalExerciseCal += Math.round(ex.calories * (healthData.exerciseTime / 30));
+            });
+            healthData.totalExerciseCal = totalExerciseCal;
+
+            const analysis = calculateHealthScore();
+            
+            // 显示所有分析结果卡片
+            document.getElementById('scoreCard').classList.remove('hidden');
+            document.getElementById('anomalyCard').classList.remove('hidden');
+            document.getElementById('sleepChartCard').classList.remove('hidden');
+            document.getElementById('activityChartCard').classList.remove('hidden');
+            document.getElementById('reportCard').classList.remove('hidden');
+            
+            updateUI(analysis);
+            renderSleepChart();
+            renderActivityChart();
+            generateHealthReport(analysis);
+        }
+
+        function renderSleepChart() {
+            document.getElementById('sleepStartLabel').textContent = healthData.sleepStart;
+            document.getElementById('sleepEndLabel').textContent = healthData.sleepEnd;
+            document.getElementById('sleepTimeDisplay').textContent = healthData.sleepStart + ' - ' + healthData.sleepEnd;
+
+            const totalMinutes = healthData.sleepHours * 60;
+            const deepSleepRatio = 0.2;
+            const wakeRatio = 0.05;
+
+            const deepMinutes = totalMinutes * deepSleepRatio;
+            const lightMinutes = totalMinutes * (1 - deepSleepRatio - wakeRatio);
+            const wakeMinutes = totalMinutes * wakeRatio;
+
+            document.getElementById('deepSleepBar').style.width = (deepSleepRatio * 100) + '%';
+            document.getElementById('lightSleepBar').style.width = ((1 - deepSleepRatio - wakeRatio) * 100) + '%';
+            document.getElementById('awakeSleepBar').style.width = (wakeRatio * 100) + '%';
+
+            document.getElementById('deepSleep').innerHTML = deepMinutes.toFixed(0) + '<span class="metric-unit">min</span>';
+            document.getElementById('lightSleep').innerHTML = lightMinutes.toFixed(0) + '<span class="metric-unit">min</span>';
+            document.getElementById('actualSleep').innerHTML = (totalMinutes - wakeMinutes).toFixed(0) + '<span class="metric-unit">min</span>';
+            document.getElementById('wakeCount').innerHTML = Math.round(wakeRatio * 10) + '<span class="metric-unit">次</span>';
+        }
+
+        function renderActivityChart() {
+            const barsContainer = document.getElementById('activityBars');
+            const barCount = 24;
+            const exerciseStartHour = parseInt(healthData.exercises.length > 0 ? healthData.exerciseStart.split(':')[0] : 7);
+            const exerciseEndHour = exerciseStartHour + Math.ceil(healthData.exerciseTime / 60);
+            let barsHTML = '';
+            for (let i = 0; i < barCount; i++) {
+                let height = 5;
+                const isExerciseHour = i >= exerciseStartHour && i < exerciseEndHour;
+                if (isExerciseHour) {
+                    height = 70 + Math.random() * 20;
+                } else if (i >= 7 && i <= 9) {
+                    height = 30 + Math.random() * 15;
+                } else if (i >= 12 && i <= 13) {
+                    height = 15 + Math.random() * 10;
+                } else if (i >= 18 && i <= 20) {
+                    height = 25 + Math.random() * 15;
+                }
+                const color = isExerciseHour ? '#764ba2' : height > 40 ? '#667eea' : '#c4b5fd';
+                barsHTML += `<div class="activity-bar" style="height: ${height}%; background: linear-gradient(to top, ${color}, ${color}aa);"></div>`;
+            }
+            barsContainer.innerHTML = barsHTML;
+
+            document.getElementById('todaySteps').innerHTML = healthData.steps.toLocaleString() + '<span class="metric-unit">步</span>';
+            document.getElementById('todayCal').innerHTML = (Math.round(healthData.steps * 0.04) + healthData.totalExerciseCal) + '<span class="metric-unit">kcal</span>';
+            document.getElementById('exerciseTimeDisplay').innerHTML = healthData.exerciseTime + '<span class="metric-unit">min</span>';
+            const intensityLevel = healthData.exerciseTime > 60 ? '高' : healthData.exerciseTime > 30 ? '中' : '低';
+            document.getElementById('activityIntensity').innerHTML = (healthData.exercises.length > 0 ? healthData.exercises[0].name : '步行') + ' ' + intensityLevel;
+            document.getElementById('activityChange').textContent = healthData.exercises.length > 0 ? healthData.exercises.map(e => e.name).join('、') : '无运动';
+        }
+
+        function calculateHealthScore() {
+            const analysis = { sleep: 0, heart: 0, activity: 0, recovery: 0, anomalies: [] };
+
+            if (healthData.sleepHours >= 7 && healthData.sleepHours <= 9) {
+                analysis.sleep = 85 + Math.random() * 15;
+            } else if (healthData.sleepHours >= 6 && healthData.sleepHours <= 10) {
+                analysis.sleep = 65 + Math.random() * 20;
+            } else {
+                analysis.sleep = 40 + Math.random() * 20;
+            }
+
+            const qualityScores = { '很差': 20, '较差': 40, '一般': 60, '较好': 80, '很好': 95 };
+            analysis.sleep = (analysis.sleep + qualityScores[healthData.sleepQuality]) / 2;
+
+            const fatigueToHeart = { 1: 95, 2: 88, 3: 80, 4: 75, 5: 70, 6: 60, 7: 55, 8: 48, 9: 40, 10: 35 };
+            analysis.heart = fatigueToHeart[healthData.fatigue] || 70;
+
+            if (healthData.systolicBP && healthData.diastolicBP) {
+                if (healthData.systolicBP >= 140 || healthData.diastolicBP >= 90) {
+                    analysis.heart = Math.min(analysis.heart, 50);
+                    analysis.anomalies.push({ title: '血压偏高', desc: '您的血压为 ' + healthData.systolicBP + '/' + healthData.diastolicBP + ' mmHg，建议就医检查' });
+                }
+            }
+
+            const targetSteps = 10000;
+            if (healthData.steps >= targetSteps) {
+                analysis.activity = 90 + Math.random() * 10;
+            } else if (healthData.steps >= targetSteps * 0.6) {
+                analysis.activity = 70 + Math.random() * 20;
+            } else {
+                analysis.activity = 50 + Math.random() * 20;
+            }
+            if (healthData.exerciseTime >= 30) analysis.activity = Math.min(100, analysis.activity + 10);
+
+            analysis.recovery = 100 - (healthData.fatigue * 8) - (10 - healthData.sleepHours) * 5;
+            analysis.recovery = Math.max(20, Math.min(100, analysis.recovery));
+
+            if (healthData.symptoms.includes('胸闷') || healthData.symptoms.includes('心悸')) {
+                analysis.heart = Math.min(analysis.heart, 60);
+                analysis.anomalies.push({ title: '心血管症状', desc: '检测到胸闷或心悸症状，建议尽快就医检查' });
+            }
+            if (healthData.symptoms.includes('乏力') || healthData.symptoms.includes('头晕')) {
+                analysis.recovery = Math.min(analysis.recovery, 50);
+                analysis.anomalies.push({ title: '疲劳症状', desc: '检测到疲劳相关症状，建议注意休息' });
+            }
+            if (healthData.symptoms.includes('失眠')) {
+                analysis.sleep = Math.min(analysis.sleep, 50);
+                analysis.anomalies.push({ title: '睡眠障碍', desc: '检测到失眠症状，建议改善睡眠习惯' });
+            }
+            if (healthData.spo2 && healthData.spo2 < 95) {
+                analysis.anomalies.push({ title: '低血氧警告', desc: '您的血氧饱和度为 ' + healthData.spo2 + '%，低于正常值' });
+            }
+
+            analysis.total = (analysis.sleep + analysis.heart + analysis.activity + analysis.recovery) / 4;
+            return analysis;
+        }
+
+        function updateUI(analysis) {
+            const totalScore = Math.round(analysis.total);
+            const scoreDegree = (totalScore / 100) * 360;
+            document.getElementById('scoreCircle').style.setProperty('--score-degree', scoreDegree + 'deg');
+            document.getElementById('totalScore').textContent = totalScore;
+
+            const gradeEl = document.getElementById('scoreGrade');
+            if (totalScore >= 90) { gradeEl.textContent = '优秀'; gradeEl.className = 'score-grade excellent'; }
+            else if (totalScore >= 75) { gradeEl.textContent = '良好'; gradeEl.className = 'score-grade good'; }
+            else if (totalScore >= 60) { gradeEl.textContent = '一般'; gradeEl.className = 'score-grade fair'; }
+            else { gradeEl.textContent = '需改善'; gradeEl.className = 'score-grade poor'; }
+
+            updateMetric('sleep', analysis.sleep);
+            updateMetric('heart', analysis.heart);
+            updateMetric('activity', analysis.activity);
+            updateMetric('recovery', analysis.recovery);
+
+            const anomalyList = document.getElementById('anomalyList');
+            if (analysis.anomalies.length > 0) {
+                anomalyList.innerHTML = analysis.anomalies.map(a =>
+                    `<div class="anomaly-item">
+                        <div class="anomaly-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                                <line x1="12" y1="9" x2="12" y2="13"/>
+                                <line x1="12" y1="17" x2="12.01" y2="17"/>
+                            </svg>
+                        </div>
+                        <div class="anomaly-content">
+                            <div class="anomaly-title">${a.title}</div>
+                            <div class="anomaly-desc">${a.desc}</div>
+                        </div>
+                    </div>`
+                ).join('');
+            } else {
+                document.getElementById('anomalyCard').classList.add('hidden');
+            }
+        }
+
+        function updateMetric(type, score) {
+            const scoreEl = document.getElementById(type + 'Score');
+            const statusEl = document.getElementById(type + 'Status');
+            scoreEl.innerHTML = Math.round(score) + '<span class="metric-unit">分</span>';
+
+            if (score >= 80) { statusEl.textContent = '优秀'; statusEl.className = 'metric-status normal'; }
+            else if (score >= 60) { statusEl.textContent = '正常'; statusEl.className = 'metric-status normal'; }
+            else if (score >= 40) { statusEl.textContent = '偏低'; statusEl.className = 'metric-status warning'; }
+            else { statusEl.textContent = '异常'; statusEl.className = 'metric-status danger'; }
+
+            if (type === 'heart') {
+                const heartLevels = ['充沛', '良好', '一般', '较弱', '虚弱'];
+                document.getElementById('heartChange').textContent = '心血管：' + heartLevels[Math.min(Math.floor((100 - score) / 20), 4)];
+            }
+            if (type === 'recovery') {
+                const fatigueLabels = ['充沛', '良好', '一般', '偏累', '疲劳'];
+                document.getElementById('fatigueLevel').textContent = '疲劳度：' + fatigueLabels[Math.min(Math.floor(healthData.fatigue / 2), 4)];
+            }
+        }
+
+        function analyzeSleepHealth() {
+            const issues = [];
+            const suggestions = [];
+
+            const sleepStartHour = parseInt(healthData.sleepStart.split(':')[0]);
+            const sleepStartMinute = parseInt(healthData.sleepStart.split(':')[1]);
+            const sleepEndHour = parseInt(healthData.sleepEnd.split(':')[0]);
+            const sleepEndMinute = parseInt(healthData.sleepEnd.split(':')[1]);
+
+            const totalSleepMinutes = healthData.sleepHours * 60;
+
+            if (healthData.sleepHours < 6) {
+                issues.push('睡眠严重不足：当前睡眠仅' + healthData.sleepHours.toFixed(1) + '小时，远低于成人推荐的7-9小时');
+                suggestions.push('建议提前入睡时间，确保每晚7-9小时的充足睡眠');
+            } else if (healthData.sleepHours < 7) {
+                issues.push('睡眠不足：当前睡眠' + healthData.sleepHours.toFixed(1) + '小时，略低于推荐时间');
+                suggestions.push('建议提前15-30分钟入睡，增加睡眠时长');
+            }
+
+            if (sleepStartHour >= 0 && sleepStartHour < 5) {
+                issues.push('入睡时间过晚：' + healthData.sleepStart + '入睡属于熬夜范围');
+                suggestions.push('建议在22:00-23:00之间入睡，遵循自然昼夜节律');
+            } else if (sleepStartHour >= 1 && sleepStartHour < 23) {
+                issues.push('入睡时间偏晚：' + healthData.sleepStart + '入睡可适当提前');
+                suggestions.push('建议调整作息，在22:00-23:00之间入睡更利于健康');
+            }
+
+            if (sleepEndHour < 6) {
+                issues.push('起床时间过早：' + healthData.sleepEnd + '起床可能影响睡眠质量');
+                suggestions.push('建议保持规律的作息时间，早晨6-8点起床较为适宜');
+            } else if (sleepEndHour > 9) {
+                issues.push('起床时间过晚：' + healthData.sleepEnd + '起床会打乱生物钟');
+                suggestions.push('建议设定固定的起床时间，最晚不超过8-9点');
+            }
+
+            const isWeekend = false;
+            if (!isWeekend && sleepEndHour - sleepStartHour > 10) {
+                issues.push('作息不规律：睡眠时长波动过大');
+                suggestions.push('建议保持规律的睡眠时间，周末与工作日差异不宜超过1小时');
+            }
+
+            if (healthData.symptoms.includes('失眠')) {
+                issues.push('存在失眠症状：近期有入睡困难或睡眠中断情况');
+                suggestions.push('建议：1）睡前避免使用电子设备；2）营造安静黑暗的睡眠环境；3）可尝试深呼吸或冥想放松');
+            }
+
+            let resultHTML = '';
+            if (issues.length > 0) {
+                resultHTML += '<div style="background: #fef2f2; padding: 12px; border-radius: 10px; margin: 10px 0;">';
+                resultHTML += '<div style="color: #dc2626; font-weight: 600; margin-bottom: 8px;">⚠️ 检测到以下睡眠问题：</div>';
+                issues.forEach(issue => {
+                    resultHTML += '<p style="color: #991b1b; margin: 4px 0;">• ' + issue + '</p>';
+                });
+                resultHTML += '</div>';
+            }
+
+            if (suggestions.length > 0) {
+                resultHTML += '<div style="background: #fef3c7; padding: 12px; border-radius: 10px; margin: 10px 0;">';
+                resultHTML += '<div style="color: #92400e; font-weight: 600; margin-bottom: 8px;">💡 健康建议：</div>';
+                suggestions.forEach(suggestion => {
+                    resultHTML += '<p style="color: #78350f; margin: 4px 0;">• ' + suggestion + '</p>';
+                });
+                resultHTML += '</div>';
+            }
+
+            if (issues.length === 0) {
+                resultHTML = '<p style="color: #16a34a;">✅ 睡眠状况良好：睡眠时长充足，作息时间合理，继续保持！</p>';
+            }
+
+            return resultHTML;
+        }
+
+        function generateHealthReport(analysis) {
+            const content = document.getElementById('reportContent');
+
+            const sleepCheck = analyzeSleepHealth();
+
+            content.innerHTML = `
+                <div class="report-section">
+                    <div class="report-section-title">📊 整体状态</div>
+                    <p>您的健康综合评分达到 <strong>${Math.round(analysis.total)}分</strong>，
+                    ${analysis.total >= 75 ? '整体状态良好，继续保持！' : analysis.total >= 60 ? '状态一般，建议适当调整。' : '需要重点关注健康状况。'}</p>
+                </div>
+                <div class="report-section">
+                    <div class="report-section-title">😴 睡眠分析</div>
+                    <p>睡眠时间 <strong>${healthData.sleepStart} - ${healthData.sleepEnd}</strong>，
+                    总时长约 <strong>${healthData.sleepHours.toFixed(1)}小时</strong>。</p>
+                    ${sleepCheck}
+                </div>
+                <div class="report-section">
+                    <div class="report-section-title">🏃 活动分析</div>
+                    <p>今日步数为 <strong>${healthData.steps.toLocaleString()}步</strong>，
+                    ${healthData.steps >= 10000 ? '达到推荐目标，继续保持！' : '未达到每日10000步目标，建议增加活动量。'}</p>
+                    ${healthData.exercises.length > 0 ? `<p>运动项目：<strong>${healthData.exercises.map(e => e.name).join('、')}</strong></p>` : ''}
+                    ${healthData.exerciseTime > 0 ? `<p>运动时长 <strong>${healthData.exerciseTime}分钟</strong>，消耗约 <strong>${healthData.totalExerciseCal}kcal</strong></p>` : ''}
+                </div>
+                <div class="report-section">
+                    <div class="report-section-title">⚠️ 风险提示</div>
+                    ${analysis.anomalies.length > 0 ? analysis.anomalies.map(a => '<p>• ' + a.title + '：' + a.desc + '</p>').join('') : '<p>未检测到明显异常，继续保持健康生活方式。</p>'}
+                </div>
+                <div class="report-section">
+                    <div class="report-section-title">💡 改善建议</div>
+                    <ul style="margin-left: 20px;">
+                        ${analysis.sleep < 70 ? '<li>保证每天7-9小时的睡眠时间</li>' : ''}
+                        ${analysis.activity < 70 ? '<li>每天步行10000步以上</li>' : ''}
+                        ${analysis.heart < 70 ? '<li>关注心血管健康，定期监测血压心率</li>' : ''}
+                        ${analysis.recovery < 70 ? '<li>注意休息，避免过度疲劳</li>' : ''}
+                        <li>保持均衡饮食，多吃蔬菜水果</li>
+                    </ul>
+                </div>
+            `;
+        }
+
+        function switchReport(type) {
+            document.querySelectorAll('.report-tab').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        updateSliderValue('fatigueSlider');
+    </script>
+</body>
+</html>

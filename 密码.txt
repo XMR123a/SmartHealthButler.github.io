@@ -1,0 +1,8 @@
+邮箱:admin@health.com
+密码:admin123
+普通用户账号
+邮箱:zhangsan@test.com
+密码:123456
+其他测试账号
+邮箱:lisi@test.com，密码:654321
+邮箱:wangwu@test.com，密码:password
